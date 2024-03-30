@@ -110,9 +110,11 @@ def catalog(request):
     return render(request, 'cards/catalog.html', context)  # рендер странички каталога карточек
 
 def get_card_by_id(request, card_id):
+    
     return HttpResponse(f"Карточка {card_id}")  # вернет страничку с надписью "Карточка {card_id}" на русском языке.
 
 def get_category_by_name(request, slug):
+    
     return HttpResponse(f"Категория {slug}")  # вернет страничку с надписью "Категория {slug}" на русском языке.
 
 def get_detail_card_by_id(request, card_id):
@@ -133,3 +135,14 @@ def get_detail_card_by_id(request, card_id):
     }
 
     return render(request, 'cards/card_detail.html', context)
+
+def get_cards_by_tag(request, tag_id):
+    
+    cards = Card.objects.filter(tags__id=tag_id)
+    
+    context = {
+        'cards': cards,
+        'menu': info['menu'],
+    }
+    
+    return render(request, 'cards/catalog.html', context)
