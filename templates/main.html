@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% comment %} {% block head %} {% endcomment %}
+    {% block title %}Главная страница{% endblock %}
+{% comment %} {% endblock %} {% endcomment %}
+{% block content %}
+    <h1>Главная страница сайта</h1>
+    <p>Добро пожаловать на наш сайт!</p>
+    <p>На нашем сайте, карточек {{ cards_count }}, пользователей {{ users_count }}.</p>
+{% endblock %}
