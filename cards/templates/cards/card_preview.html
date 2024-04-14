@@ -9,7 +9,7 @@
       </div>
       <div class="col-md-8">
         <div class="card-body">
-          <h5 class="card-title">{{ card.question }}</h5>
+          <h5 class="card-title">{% markdown_to_html card.question %}</h5>
           <p class="card-text">{% markdown_to_html card.answer|truncatechars:100 %}</p>
           <p class="card-text"><small class="text-muted">Категория: {{ card.category }}</small></p>
           <p class="card-text">
