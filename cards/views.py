@@ -1,7 +1,8 @@
 from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from .models import Card
 from django.db.models import F
+from .forms import CardModelForm
 
 # Create your views here.
 
@@ -93,3 +94,13 @@ def get_cards_by_tag(request, tag_id):
     }
     
     return render(request, 'cards/catalog.html', context)
+
+def add_card(request):
+    if request.method == 'POST':
+        form = CardModelForm(request.POST)
+        if form.is_valid():
+            return HttpResponseRedirect('/thanks/')
+    else:
+        form = CardModelForm()
+
+    return render(request, 'cards/add_card.html', {'form': form})
