@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from .models import Card
 from django.db.models import F
@@ -21,6 +21,9 @@ info = {
         {"title": "Каталог",
         "url": "/cards/catalog/",
         "url_name": "catalog"},
+        {"title": "Добавить",
+        "url": "/add/",
+        "url_name": "add_card"},
     ], # Добавим в контекст шаблона информацию о карточках, чтобы все было в одном месте
 }
 
@@ -98,9 +101,12 @@ def get_cards_by_tag(request, tag_id):
 def add_card(request):
     if request.method == 'POST':
         form = CardModelForm(request.POST)
-        if form.is_valid():
-            return HttpResponseRedirect('/thanks/')
+        if form.is_valid():  
+            card = form.save()
+            # Редирект на страницу созданной карточки после успешного сохранения
+            return redirect(card.get_absolute_url())
+            
     else:
         form = CardModelForm()
 
-    return render(request, 'cards/add_card.html', {'form': form})
+    return render(request, 'cards/add_card.html', {'form': form, 'menu': info['menu']})

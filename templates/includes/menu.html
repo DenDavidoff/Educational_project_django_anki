@@ -18,6 +18,9 @@
               <!-- В BS5 разделители в меню не являются общепринятыми, но если нужно, используйте дополнительный CSS или JS для стилизации -->
             {% endif %}
           {% endfor %}
+          <li class="nav-item">
+            <a class="nav-link {% if forloop.first %}active{% endif %}" aria-current="page" href="/admin/">Админка</a>
+          </li>
         </ul>
       </div>
     </div>
