@@ -1,7 +1,10 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
+from django.db.models import F, Q
+from django.core.paginator import Paginator
+
 from .models import Card
-from django.db.models import F
+
 from .forms import CardModelForm
 
 # Create your views here.
@@ -40,7 +43,9 @@ def catalog(request):
     
     sort = request.GET.get('sort', 'date')
     order = request.GET.get('order', 'desc')
-
+    search_query = request.GET.get('search_query', '')
+    page_number = request.GET.get('page', 1)
+    
     valid_sort_fields = {'date', 'views', 'adds'}
     if sort not in valid_sort_fields:
         sort = 'date'
@@ -50,15 +55,30 @@ def catalog(request):
     else:
         order_by = f'-{sort}'
 
-    cards = Card.objects.all().order_by(order_by)
+
+    if not search_query:
+        cards = Card.objects.select_related('category').prefetch_related('tags').order_by(order_by)
+
+    else:
+        cards = Card.objects.filter(Q(question__icontains=search_query) | Q(answer__icontains=search_query) | Q(tags__name__icontains=search_query)).select_related('category').prefetch_related('tags').order_by(order_by).distinct()
+
+    paginator = Paginator(cards, 25)
+
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'cards': cards,
-        'cards_count': cards.count(),
+        'cards_count': len(cards),
         'menu': info['menu'],
+        'page_obj': page_obj,
+        "sort": sort,
+        "order": order,
     }
     
-    return render(request, 'cards/catalog.html', context)  # рендер странички каталога карточек
+    response = render(request, 'cards/catalog.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'  # - кэш не используется
+    response['Expires'] = '0'
+    return response
 
 def get_card_by_id(request, card_id):
     

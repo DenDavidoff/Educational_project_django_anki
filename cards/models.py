@@ -18,7 +18,6 @@ class Card(models.Model):
     check_status = models.BooleanField(default=False, choices=tuple(map(lambda x: (bool(x[0]), x[1]), Status.choices)), verbose_name='Проверено')
 
 
-
     class Meta:
         db_table = 'Cards' # имя таблицы в базе данных
         verbose_name = 'Карточка' # имя модели в единственном числе
