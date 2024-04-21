@@ -2,6 +2,13 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse, HttpResponseRedirect
 from django.db.models import F, Q
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.views import View
+from django.views.generic.list import ListView
+from django.views.generic import TemplateView, DetailView
+from django.views.generic.edit import CreateView
+from django.contrib.auth import get_user_model
+from django.urls import reverse_lazy
 
 from .models import Card
 
@@ -11,9 +18,6 @@ from .forms import CardModelForm
 
 
 info = {
-    "users_count": 100500,
-    "cards_count": 200600,
-    # "menu": ['Главная', 'О проекте', 'Каталог']
     "menu": [
         {"title": "Главная",
         "url": "/",
@@ -27,58 +31,106 @@ info = {
         {"title": "Добавить",
         "url": "/add/",
         "url_name": "add_card"},
-    ], # Добавим в контекст шаблона информацию о карточках, чтобы все было в одном месте
+    ],
 }
 
 
-def main(request):
-    """Представление рендерит шаблон base.html"""
-    return render(request, 'main.html', info)  # рендер главной странички
+class MenuMixin:
+    """
+    Класс-миксин для добавления меню в контекст шаблона
+    Добывает и кеширует cards_count, users_count, menu
+    """
+    timeout = 30
 
-def about(request):
-    """Представление рендерит шаблон about.html"""
-    return render(request, 'about.html', info)  # рендер странички о нас
+    # Метод, добывающий меню из контекста
+    def get_menu(self):
+        menu = cache.get('menu')
+        if not menu:
+            menu = info['menu']
+            cache.set('menu', menu, timeout=self.timeout)
 
-def catalog(request):
+        return menu
     
-    sort = request.GET.get('sort', 'date')
-    order = request.GET.get('order', 'desc')
-    search_query = request.GET.get('search_query', '')
-    page_number = request.GET.get('page', 1)
+    # Метод, добывающий информацию по количеству карточек в базе
+    def get_cards_count(self):
+        cards_count = cache.get('cards_count')
+        if not cards_count:
+            cards_count = Card.objects.count()
+            cache.set('cards_count', cards_count, timeout=self.timeout)
+
+        return cards_count
     
-    valid_sort_fields = {'date', 'views', 'adds'}
-    if sort not in valid_sort_fields:
-        sort = 'date'
+    # Метод, добывающий информацию по количеству пользователей в базе
+    def get_users_count(self):
+        users_count = cache.get('users_count')
+        if not users_count:
+            users_count = get_user_model().objects.count()
+            cache.set('users_count', users_count, timeout=self.timeout)
 
-    if order == 'asc':
-        order_by = sort
-    else:
-        order_by = f'-{sort}'
+        return users_count
+
+    # Метод, который использует два предыдущих метода и собирает их в контекст
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['menu'] = self.get_menu()
+        context['cards_count'] = self.get_cards_count()
+        context['users_count'] = self.get_users_count()
+        return context
 
 
-    if not search_query:
-        cards = Card.objects.select_related('category').prefetch_related('tags').order_by(order_by)
+class AboutView(MenuMixin, TemplateView):
+    """
+    Класс вьюшки для страницы "О нас"
+    """
+    template_name = 'about.html'
 
-    else:
-        cards = Card.objects.filter(Q(question__icontains=search_query) | Q(answer__icontains=search_query) | Q(tags__name__icontains=search_query)).select_related('category').prefetch_related('tags').order_by(order_by).distinct()
 
-    paginator = Paginator(cards, 25)
+class IndexView(MenuMixin, TemplateView):
+    """
+    Класс вьюшки для страницы "Главная"
+    """
+    template_name = 'main.html'
 
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'cards': cards,
-        'cards_count': len(cards),
-        'menu': info['menu'],
-        'page_obj': page_obj,
-        "sort": sort,
-        "order": order,
-    }
-    
-    response = render(request, 'cards/catalog.html', context)
-    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'  # - кэш не используется
-    response['Expires'] = '0'
-    return response
+
+class CatalogView(MenuMixin, ListView):
+    """
+    Класс вьюшки для страницы "Каталог"
+    Использует методы получения параметров сортировки и добавления дополнительного контекста
+    """
+    model = Card
+    template_name = 'cards/catalog.html'
+    context_object_name = 'cards'
+    paginate_by = 25
+
+    # Метод для модификации начального запроса к БД
+    def get_queryset(self):
+        sort = self.request.GET.get('sort', 'date')
+        order = self.request.GET.get('order', 'desc')
+        search_query = self.request.GET.get('search_query', '')
+
+        if order == 'asc':
+            order_by = sort
+        else:
+            order_by = f'-{sort}'
+
+        if search_query:
+            queryset = Card.objects.filter(
+                Q(question__iregex=search_query) |
+                Q(answer__iregex=search_query) |
+                Q(tags__name__iregex=search_query)
+            ).select_related('category').prefetch_related('tags').order_by(order_by).distinct()
+        else:
+            queryset = Card.objects.select_related('category').prefetch_related('tags').order_by(order_by)
+        return queryset
+
+    # Метод для добавления дополнительного контекста
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['sort'] = self.request.GET.get('sort', 'date')
+        context['order'] = self.request.GET.get('order', 'desc')
+        context['search_query'] = self.request.GET.get('search_query', '')
+        return context
+
 
 def get_card_by_id(request, card_id):
     
@@ -88,24 +140,22 @@ def get_category_by_name(request, slug):
     
     return HttpResponse(f"Категория {slug}")  # вернет страничку с надписью "Категория {slug}" на русском языке.
 
-def get_detail_card_by_id(request, card_id):
-    """
-    Возвращает детальную информацию по карточке для представления
-    """
-    # Ищем карточку по id в нашем наборе данных
-    card = get_object_or_404(Card, pk=card_id)
-    
-    card.views = F('views') + 1
-    card.save()
 
-    card.refresh_from_db() 
-    
-    context = {
-        'card': card,
-        'menu': info['menu'],
-    }
+class CardDetailView(MenuMixin, DetailView):
+    """
+    Класс вьюшки для страницы "Детальная информация о карточке"
+    Использует методы обновления счётчиков просмотров
+    """
+    model = Card
+    template_name = 'cards/card_detail.html'
+    context_object_name = 'card'
 
-    return render(request, 'cards/card_detail.html', context)
+    # Метод для обновления счетчика просмотров при каждом отображении детальной страницы карточки
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset=queryset)
+        Card.objects.filter(pk=obj.pk).update(views=F('views') + 1)
+        return obj
+
 
 def get_cards_by_tag(request, tag_id):
     
@@ -118,15 +168,12 @@ def get_cards_by_tag(request, tag_id):
     
     return render(request, 'cards/catalog.html', context)
 
-def add_card(request):
-    if request.method == 'POST':
-        form = CardModelForm(request.POST)
-        if form.is_valid():  
-            card = form.save()
-            # Редирект на страницу созданной карточки после успешного сохранения
-            return redirect(card.get_absolute_url())
-            
-    else:
-        form = CardModelForm()
 
-    return render(request, 'cards/add_card.html', {'form': form, 'menu': info['menu']})
+class AddCardCreateView(MenuMixin, CreateView):
+    """
+    Класс вьюшки для страницы "Добавление новой карточки"
+    """
+    model = Card
+    form_class = CardModelForm
+    template_name = 'cards/add_card.html'
+    success_url = reverse_lazy('catalog')  # URL для перенаправления после успешного создания карточки

@@ -16,11 +16,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.cache import cache_page
+from anki import settings
 from cards import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('cards/', include('cards.urls')),
-    path('', views.main, name='index'),
-    path('about/', views.about, name='about'),
+    # path('', views.main, name='index'),
+    # path('about/', views.about, name='about'),
+    path('', cache_page(60*15)(views.IndexView.as_view()), name='index'),
+    path('about/', cache_page(60*15)(views.AboutView.as_view()), name='about'), 
 ]
+
+
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [
+                      path('__debug__/', include(debug_toolbar.urls)),
+                      # другие URL-паттерны
+                  ] + urlpatterns
