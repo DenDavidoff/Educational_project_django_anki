@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    'debug_toolbar',
     'cards',
+    'users',
 ]
 
 JAZZMIN_SETTINGS = {
@@ -139,3 +141,5 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+LOGIN_URL = 'users:login'

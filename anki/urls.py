@@ -26,7 +26,8 @@ urlpatterns = [
     # path('', views.main, name='index'),
     # path('about/', views.about, name='about'),
     path('', cache_page(60*15)(views.IndexView.as_view()), name='index'),
-    path('about/', cache_page(60*15)(views.AboutView.as_view()), name='about'), 
+    path('about/', cache_page(60*15)(views.AboutView.as_view()), name='about'),
+    path('users/', include('users.urls', namespace='users')),
 ]
 
 

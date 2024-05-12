@@ -6,9 +6,10 @@ from django.core.cache import cache
 from django.views import View
 from django.views.generic.list import ListView
 from django.views.generic import TemplateView, DetailView
-from django.views.generic.edit import CreateView
 from django.contrib.auth import get_user_model
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import Card
 
@@ -169,7 +170,7 @@ def get_cards_by_tag(request, tag_id):
     return render(request, 'cards/catalog.html', context)
 
 
-class AddCardCreateView(MenuMixin, CreateView):
+class AddCardCreateView(MenuMixin, LoginRequiredMixin, CreateView):
     """
     Класс вьюшки для страницы "Добавление новой карточки"
     """
@@ -177,3 +178,18 @@ class AddCardCreateView(MenuMixin, CreateView):
     form_class = CardModelForm
     template_name = 'cards/add_card.html'
     success_url = reverse_lazy('catalog')  # URL для перенаправления после успешного создания карточки
+    redirect_field_name = 'next'
+    
+    def form_valid(self, form):
+        # Добавляем автора к карточке перед сохранением
+        form.instance.author = self.request.user
+        # Логика обработки данных формы перед сохранением объекта
+        return super().form_valid(form)
+    
+
+class EditCardUpdateView(MenuMixin, LoginRequiredMixin, UpdateView):
+    model = Card  # Указываем модель, с которой работает представление
+    form_class = CardModelForm  # Указываем класс формы для редактирования карточки
+    template_name = 'cards/add_card.html'  # Указываем шаблон, который будет использоваться для отображения формы
+    context_object_name = 'card'  # Имя переменной контекста для карточки
+    success_url = reverse_lazy('catalog')  # URL для перенаправления после успешного редактирования карточки
