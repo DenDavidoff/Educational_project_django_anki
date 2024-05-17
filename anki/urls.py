@@ -19,6 +19,8 @@ from django.urls import path, include
 from django.views.decorators.cache import cache_page
 from anki import settings
 from cards import views
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -38,3 +40,6 @@ if settings.DEBUG:
                       path('__debug__/', include(debug_toolbar.urls)),
                       # другие URL-паттерны
                   ] + urlpatterns
+    
+    # Добавляем обработку медиафайлов
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

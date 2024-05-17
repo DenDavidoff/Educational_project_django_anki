@@ -1,7 +1,8 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm, PasswordResetForm
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+import datetime
 
 class RegisterUserForm(forms.ModelForm):
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
@@ -37,3 +38,52 @@ class RegisterUserForm(forms.ModelForm):
 class LoginUserForm(AuthenticationForm):
     username = forms.CharField(label='Имя пользователя', widget=forms.TextInput(attrs={'class': 'form-control'}))
     password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    
+
+class ProfileUserForm(forms.ModelForm):
+    this_year = datetime.date.today().year
+    date_birth = forms.DateField(
+        label='Дата рождения',
+        widget=forms.SelectDateWidget(years=range(this_year - 100, this_year - 5)),
+        required=False
+    )
+    photo = forms.ImageField(
+        label='Фотография',
+        required=False
+    )
+    
+    
+    username = forms.CharField(
+        disabled=True,  # Поле не редактируемое
+        label='Логин',
+        widget=forms.TextInput(attrs={'class': 'form-control'})  # Использование Bootstrap класса
+    )
+    email = forms.CharField(
+        disabled=True,  # Поле не редактируемое
+        label='E-mail',
+        widget=forms.TextInput(attrs={'class': 'form-control'})  # Использование Bootstrap класса
+    )
+
+    class Meta:
+        model = get_user_model()
+        fields = ['username', 'email', 'first_name', 'last_name', 'date_birth', 'photo']
+        labels = {
+            'first_name': 'Имя',
+            'last_name': 'Фамилия',
+            'date_birth': 'Дата рождения',
+            'photo': 'Фотография'
+        }
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'})
+        }
+
+
+class UserPasswordChangeForm(PasswordChangeForm):
+    old_password = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Старый пароль'}))
+    new_password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Новый пароль'}))
+    new_password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Подтверждение нового пароля'}))
+    
+
+class UserPasswordResetForm(PasswordResetForm):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Почта'}))
