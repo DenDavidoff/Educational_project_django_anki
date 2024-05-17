@@ -117,4 +117,4 @@ class UserCardsView(ListView):
                      'active_tab': 'profile_cards'}
 
     def get_queryset(self):
-        return Card.objects.filter(author=self.request.user).order_by('-upload_date')
+        return Card.objects.filter(author=self.request.user).order_by('-date')

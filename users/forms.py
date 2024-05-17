@@ -86,4 +86,6 @@ class UserPasswordChangeForm(PasswordChangeForm):
     
 
 class UserPasswordResetForm(PasswordResetForm):
-    email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Почта'}))
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Почта'}),
+    )
