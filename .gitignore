@@ -7748,3 +7748,6 @@ media/users/images/2024/05/17/348.jpg
 users/migrations/__pycache__/0001_initial.cpython-310.pyc
 cards_fixtures.json
 db.json
+.gitignore
+cards_fixtures.json
+db.json
