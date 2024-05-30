@@ -29,9 +29,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['https://dendavidoff-educational-project-django-anki-e55e.twc1.net', 'dendavidoff-educational-project-django-anki-e55e.twc1.net', 'www.dendavidoff-educational-project-django-anki-e55e.twc1.net', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['https://dendavidoff-educational-project-django-anki-e55e.twc1.net', 'dendavidoff-educational-project-django-anki-e55e.twc1.net', 'www.dendavidoff-educational-project-django-anki-e55e.twc1.net', '331den.ru', 'www.331den.ru', 'https://331den.ru', 'localhost', '127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ['https://dendavidoff-educational-project-django-anki-e55e.twc1.net']
+CSRF_TRUSTED_ORIGINS = ['https://dendavidoff-educational-project-django-anki-e55e.twc1.net', 'https://331den.ru']
 
 # Application definition
 
