@@ -7,3 +7,5 @@ class CardsConfig(AppConfig):
     verbose_name = 'Карточки'
     verbose_name_plural = 'Карточки'
     
+    def ready(self):
+        import Cards.signals
